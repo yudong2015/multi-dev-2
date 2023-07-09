@@ -1,0 +1,52 @@
+pipeline {
+  agent {
+    node {
+      label 'maven'
+    }
+  }
+
+    parameters {
+        string(name:'TAG_NAME',defaultValue: '',description:'')
+    }
+
+    environment {
+        DOCKER_CREDENTIAL_ID = 'dockerhub-id'
+        GITHUB_CREDENTIAL_ID = 'github-id'
+        KUBECONFIG_CREDENTIAL_ID = 'demo-kubeconfig'
+        REGISTRY = 'registry.cn-huhehaote.aliyuncs.com'
+        DOCKERHUB_NAMESPACE = 'jackyu-testing'
+        GITHUB_ACCOUNT = 'yudong2015'
+        APP_NAME = 'devops-maven-test'
+    }
+
+    stages {
+        stage ('checkout scm') {
+            steps {
+                checkout(scm)
+            }
+        }
+
+        stage ('unit test') {
+            steps {
+                container ('maven') {
+                    sh 'mvn clean test'
+                }
+            }
+        }
+ 
+        stage ('build & push') {
+            steps {
+                container ('maven') {
+                    sh 'mvn clean package -DskipTests'
+                }
+            }
+        }
+
+        stage('Archive artifacts') {
+          steps {
+            archiveArtifacts(artifacts: 'target/*.jar', followSymlinks: false)
+          }
+        }
+
+    }
+}
